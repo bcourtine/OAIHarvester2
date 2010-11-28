@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.oclc.oai</groupId>
 	<artifactId>oaiharvester2</artifactId>
-	<version>0.1.12</version>
+	<version>0.2.0</version>
 
 	<dependencies>
 		<dependency>
