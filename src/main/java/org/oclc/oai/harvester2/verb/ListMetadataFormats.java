@@ -44,8 +44,7 @@ public class ListMetadataFormats extends HarvesterVerb {
 	 * @throws javax.xml.parsers.ParserConfigurationException
 	 * @throws javax.xml.transform.TransformerException
 	 */
-	public ListMetadataFormats(String baseURL)
-			throws IOException, ParserConfigurationException, SAXException, TransformerException {
+	public ListMetadataFormats(String baseURL) throws IOException, ParserConfigurationException, SAXException, TransformerException {
 		this(baseURL, null);
 	}
 

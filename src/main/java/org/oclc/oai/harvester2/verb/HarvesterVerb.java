@@ -40,8 +40,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
 import org.apache.xpath.XPathAPI;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
@@ -55,13 +53,9 @@ import org.xml.sax.SAXException;
  * HarvesterVerb is the parent class for each of the OAI verbs.
  *
  * @author Jefffrey A. Young, OCLC Online Computer Library Center
+ * @author Benoit Courtine 2010-11-30: namespace node export method. Log4J code and dependencies removed.
  */
 public abstract class HarvesterVerb {
-	private static Logger logger = Logger.getLogger(HarvesterVerb.class);
-
-	static {
-		BasicConfigurator.configure();
-	}
 
 	/* Primary OAI namespaces */
 	public static final String SCHEMA_LOCATION_V2_0 = "http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd";
@@ -191,8 +185,7 @@ public abstract class HarvesterVerb {
 	 * @throws SAXException
 	 * @throws TransformerException
 	 */
-	public HarvesterVerb(String requestURL)
-			throws IOException, ParserConfigurationException, SAXException, TransformerException {
+	public HarvesterVerb(String requestURL) throws IOException, ParserConfigurationException, SAXException, TransformerException {
 		harvest(requestURL);
 	}
 
@@ -205,10 +198,8 @@ public abstract class HarvesterVerb {
 	 * @throws SAXException
 	 * @throws TransformerException
 	 */
-	public void harvest(String requestURL)
-			throws IOException, ParserConfigurationException, SAXException, TransformerException {
+	public void harvest(String requestURL) throws IOException, ParserConfigurationException, SAXException, TransformerException {
 		this.requestURL = requestURL;
-		logger.debug("requestURL=" + requestURL);
 		InputStream in = null;
 		URL url = new URL(requestURL);
 		HttpURLConnection con = null;
@@ -220,10 +211,7 @@ public abstract class HarvesterVerb {
 					"compress, gzip, identify");
 			try {
 				responseCode = con.getResponseCode();
-				logger.debug("responseCode=" + responseCode);
 			} catch (FileNotFoundException e) {
-				// assume it's a 503 response
-				logger.info(requestURL, e);
 				responseCode = HttpURLConnection.HTTP_UNAVAILABLE;
 			}
 
@@ -249,7 +237,6 @@ public abstract class HarvesterVerb {
 			}
 		} while (responseCode == HttpURLConnection.HTTP_UNAVAILABLE);
 		String contentEncoding = con.getHeaderField("Content-Encoding");
-		logger.debug("contentEncoding=" + contentEncoding);
 		if ("compress".equals(contentEncoding)) {
 			ZipInputStream zis = new ZipInputStream(con.getInputStream());
 			zis.getNextEntry();
@@ -272,12 +259,12 @@ public abstract class HarvesterVerb {
 		}
 		doc = builder.parse(data);
 
-		StringTokenizer tokenizer = new StringTokenizer(
-				getSingleString("/*/@xsi:schemaLocation"), " ");
+		StringTokenizer tokenizer = new StringTokenizer(getSingleString("/*/@xsi:schemaLocation"), " ");
 		StringBuilder sb = new StringBuilder();
 		while (tokenizer.hasMoreTokens()) {
-			if (sb.length() > 0)
+			if (sb.length() > 0) {
 				sb.append(" ");
+			}
 			sb.append(tokenizer.nextToken());
 		}
 		this.schemaLocation = sb.toString();
@@ -303,8 +290,7 @@ public abstract class HarvesterVerb {
 //      return str;
 	}
 
-	public String getSingleString(Node node, String xpath)
-			throws TransformerException {
+	public String getSingleString(Node node, String xpath) throws TransformerException {
 		return XPathAPI.eval(node, xpath, namespaceElement).str();
 	}
 
@@ -335,5 +321,16 @@ public abstract class HarvesterVerb {
 		} catch (TransformerException e) {
 			return e.getMessage();
 		}
+	}
+
+	/**
+	 * Create and return a deep clone of nameSpaceElement. This information can be needed to make XPath requests on document.
+	 * Since a new clone is created each time the method is called, the reference of this clone should be cached by the client.
+	 *
+	 * @return A clone of namespaceElement.
+	 * @since 0.2.1
+	 */
+	public static Node getNameSpaceElement() {
+		return namespaceElement.cloneNode(true);
 	}
 }
